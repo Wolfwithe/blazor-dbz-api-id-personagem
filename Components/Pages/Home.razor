@@ -1,0 +1,108 @@
+﻿@page "/"
+
+@using System.Text.Json
+
+<h1>Dragon Ball API</h1>
+
+<label>Digite o ID do personagem:</label>
+
+<input
+type="number"
+class="form-control"
+@bind="id" />
+
+<br>
+
+<button
+class="btn btn-primary"
+@onclick="Buscar">
+
+Buscar
+
+</button>
+
+@if (!string.IsNullOrEmpty(nome))
+{
+    <hr>
+
+    <p><strong>Nome:</strong> @nome</p>
+
+    <p><strong>Planeta:</strong> @planeta</p>
+
+    <h4>Transformações:</h4>
+
+    <ul>
+        @foreach (var t in transformacoes)
+        {
+            <li>@t</li>
+        }
+    </ul>
+}
+
+@if (!string.IsNullOrEmpty(erro))
+{
+    <p>@erro</p>
+}
+
+@code {
+
+int id = 1;
+
+string nome = "";
+
+string planeta = "";
+
+string erro = "";
+
+List<string> transformacoes = new();
+
+async Task Buscar()
+{
+    try
+    {
+        erro = "";
+
+        var client =
+            new HttpClient();
+
+        var json =
+            await client.GetStringAsync(
+                $"https://dragonball-api.com/api/characters/{id}");
+
+        using var doc =
+            JsonDocument.Parse(json);
+
+        var root =
+            doc.RootElement;
+
+        nome =
+            root
+            .GetProperty("name")
+            .GetString();
+
+        planeta =
+            root
+            .GetProperty("originPlanet")
+            .GetProperty("name")
+            .GetString();
+
+        transformacoes.Clear();
+
+        foreach (
+            var t
+            in root
+            .GetProperty("transformations")
+            .EnumerateArray())
+        {
+            transformacoes.Add(
+                t.GetProperty("name")
+                .GetString());
+        }
+    }
+    catch (Exception ex)
+    {
+        erro = ex.Message;
+    }
+}
+
+}   
